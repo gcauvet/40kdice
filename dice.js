@@ -749,6 +749,8 @@ function roll_aos() {
     var wound_val = fetch_int_value('wounds');
     var shake = fetch_value('shake');
 
+    const fnp_values = [null, 6, 5];
+
     var damage_prob = parse_dice_prob_array(damage_val, 1).normal;
 
     // Number of attacks
@@ -816,16 +818,18 @@ function roll_aos() {
 
     generate_permalink_aos();
 
-    compile_expected_damages(num_models, hit_dice, hit_stat, hit_mod, hit_reroll, hit_abilities, wound_stat, wound_mod, wound_reroll, wound_abilities, save_stat, null, rend_val, save_mod, cover, ward, damage_val, wound_val);
+    compile_expected_damages_aos(num_models, hit_dice, hit_stat, hit_mod, hit_reroll, hit_abilities, wound_stat, wound_mod, wound_reroll, wound_abilities, save_stat, rend_val, fnp_values, cover, damage_val, wound_val);
 }
 
-function compile_expected_damages(num_models, hit_dice, hit_stat, hit_mod, hit_reroll, hit_abilities, wound_stat, wound_mod, wound_reroll, wound_abilities, save_stat, invuln_stat, ap_val, save_mod, cover, fnp, damage_val, wound_val) {
-    const expectedDamages = {};
+function compile_expected_damages_aos(num_models, hit_dice, hit_stat, hit_mod, hit_reroll, hit_abilities, wound_stat, wound_mod, wound_reroll, wound_abilities, save_stats, rend_val, fnp_values, cover, damage_val, wound_val) {
+    const expectedDamages = [];
 
     // Parse damage probability
     const damage_prob = parse_dice_prob_array(damage_val, 1).normal;
 
     for (let models = 1; models <= num_models; models++) {
+        const modelResults = { models, saveStats: {} };
+
         // Number of attacks
         const attacks = parse_dice_prob_array(hit_dice, models);
 
@@ -837,19 +841,31 @@ function compile_expected_damages(num_models, hit_dice, hit_stat, hit_mod, hit_r
         const wound_prob = calc_wound_prob(wound_stat, 6, wound_mod, wound_reroll, hit_abilities, hit_prob);
         const wounds = do_wounds(wound_stat, wound_mod, wound_reroll, wound_prob, hits, wound_abilities, damage_prob);
 
-        // Saves
-        const unsaved = do_saves(save_stat, invuln_stat, ap_val, save_mod, cover, 3, null, wound_abilities, wounds, wound_prob);
+        // Iterate over save stats
+        for (let save_stat = 2; save_stat <= 6; save_stat++) {
+            modelResults.saveStats[save_stat] = [];
 
-        // Damage
-        const damage = do_damage(damage_val, fnp, damage_prob, unsaved);
+            // Iterate over FNP values
+            for (let fnp of fnp_values) {
+                // Saves
+                const unsaved = do_saves(save_stat, null, rend_val, 0, cover, null, null, wound_abilities, wounds, wound_prob);
 
-        // Calculate expected damage
-        const expectedDamage = expected_value(damage.normal);
-        expectedDamages[models] = Math.round(expectedDamage * 100) / 100; // Round to 2 decimal places
+                // Damage
+                const damage = do_damage(damage_val, fnp, damage_prob, unsaved);
+
+                // Calculate expected damage
+                const expectedDamage = expected_value(damage.normal);
+                modelResults.saveStats[save_stat].push({
+                    fnp: fnp,
+                    expectedDamage: Math.round(expectedDamage * 100) / 100 // Round to 2 decimal places
+                });
+            }
+        }
+
+        expectedDamages.push(modelResults);
     }
 
-    console.log({expectedDamages});
-    
+    console.log({ expectedDamages });
     return expectedDamages;
 }
 
