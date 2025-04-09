@@ -866,7 +866,70 @@ function compile_expected_damages_aos(num_models, hit_dice, hit_stat, hit_mod, h
     }
 
     console.log({ expectedDamages });
-    return expectedDamages;
+    displayExpectedDamages(expectedDamages);
+}
+
+function displayExpectedDamages(expectedDamages) {
+    const table = document.querySelector('#expectedDamagesTable');
+    const tableHead = table.querySelector('thead');
+    const tableBody = table.querySelector('tbody');
+
+    tableHead.innerHTML = ''; // Clear existing headers
+    tableBody.innerHTML = ''; // Clear existing rows
+
+    // Create table headers
+    const headerRow = document.createElement('tr');
+    const modelsHeader = document.createElement('th');
+    modelsHeader.textContent = 'Models';
+    headerRow.appendChild(modelsHeader);
+
+    // Dynamically create headers for each save stat
+    const saveStats = new Set();
+    expectedDamages.forEach(modelResult => {
+        for (const saveStat in modelResult.saveStats) {
+            saveStats.add(saveStat);
+        }
+    });
+
+    const sortedSaveStats = Array.from(saveStats).sort((a, b) => a - b); // Sort save stats numerically
+    sortedSaveStats.forEach(saveStat => {
+        const saveHeader = document.createElement('th');
+        saveHeader.textContent = `Save ${saveStat}`;
+        headerRow.appendChild(saveHeader);
+    });
+
+    tableHead.appendChild(headerRow);
+
+    // Create table rows
+    expectedDamages.forEach(modelResult => {
+        const row = document.createElement('tr');
+
+        // Add Models column
+        const modelsCell = document.createElement('td');
+        modelsCell.textContent = modelResult.models;
+        row.appendChild(modelsCell);
+
+        // Add data for each save stat
+        sortedSaveStats.forEach(saveStat => {
+            const saveCell = document.createElement('td');
+            const saveStatData = modelResult.saveStats[saveStat];
+
+            if (saveStatData) {
+                let cellContent = '';
+                saveStatData.forEach(entry => {
+                    const fnpText = entry.fnp === null ? 'None' : entry.fnp;
+                    cellContent += `FNP ${fnpText}: ${entry.expectedDamage}<br>`;
+                });
+                saveCell.innerHTML = cellContent;
+            } else {
+                saveCell.textContent = '-'; // Placeholder for missing data
+            }
+
+            row.appendChild(saveCell);
+        });
+
+        tableBody.appendChild(row);
+    });
 }
 
 // Binomial expansion.
