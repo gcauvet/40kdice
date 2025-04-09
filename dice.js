@@ -915,10 +915,17 @@ function displayExpectedDamages(expectedDamages) {
             const saveStatData = modelResult.saveStats[saveStat];
 
             if (saveStatData) {
+                // Sort FNP values in the order: 5, 6, None
+                saveStatData.sort((a, b) => {
+                    const fnpOrder = { 5: 1, 6: 2, null: 3 };
+                    return fnpOrder[a.fnp] - fnpOrder[b.fnp];
+                });
+
+                // Generate cell content
                 let cellContent = '';
                 saveStatData.forEach(entry => {
-                    const fnpText = entry.fnp === null ? 'None' : entry.fnp;
-                    cellContent += `FNP ${fnpText}: ${entry.expectedDamage}<br>`;
+                    const fnpText = entry.fnp === null ? 'None' : `${entry.fnp}+`;
+                    cellContent += `${fnpText}: <b>${entry.expectedDamage}</b><br>`;
                 });
                 saveCell.innerHTML = cellContent;
             } else {
