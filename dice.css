@@ -1,5 +1,5 @@
 .output {
-    display: flex;
+    display: none;
     flex-wrap: wrap;
 }
 
@@ -51,10 +51,10 @@ input.stat {
 
 /* General table styling */
 #expectedDamagesTable {
-    width: 100%; /* Make the table take up the full width of the page */
+    width: 30%; /* Make the table take up the full width of the page */
     border-collapse: collapse;
-    margin: 20px 0;
-    font-size: 1em;
+    margin: 10px 0; /* Reduce vertical margin */
+    font-size: 0.9em; /* Slightly smaller font size for compactness */
     font-family: Arial, sans-serif;
     text-align: left;
     background-color: #f9f9f9;
@@ -64,22 +64,32 @@ input.stat {
     overflow: hidden; /* Ensure the border radius applies to the entire table */
 }
 
+/* First column styling */
+#expectedDamagesTable tbody td:first-child,
+#expectedDamagesTable thead th:first-child {
+    width: 8%; /* Make the first column smaller */
+    text-align: center; /* Center-align content in the first column */
+    font-weight: bold; /* Make the first column text bold */
+}
+
 /* Table header styling */
 #expectedDamagesTable thead th {
-    background-color: #800080; /* Change header background to purple */
+    background-color: #800080; /* Purple header background */
     color: white;
-    padding: 10px;
+    padding: 5px; /* Reduce padding for compactness */
     text-align: center;
     border: 1px solid #ddd;
     word-wrap: break-word; /* Ensure text wraps within the column */
+    font-size: 0.9em; /* Slightly smaller font size */
 }
 
 /* Table body styling */
 #expectedDamagesTable tbody td {
-    padding: 10px;
+    padding: 5px; /* Reduce padding for compactness */
     border: 1px solid #ddd;
     text-align: center; /* Center-align content in cells */
     word-wrap: break-word; /* Ensure text wraps within the column */
+    font-size: 0.9em; /* Slightly smaller font size */
 }
 
 /* Alternating row colors */
@@ -94,11 +104,21 @@ input.stat {
 
 /* Add a subtle shadow to the table */
 #expectedDamagesTable {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Reduce shadow for compactness */
 }
 
 /* Add a hover effect for table headers */
 #expectedDamagesTable thead th:hover {
     background-color: #993399; /* Slightly lighter purple for hover effect */
     cursor: pointer;
+}
+
+#expectedDamagesTable caption {
+    font-size: 1.5em; /* Increase font size for emphasis */
+    font-weight: bold; /* Make the title bold */
+    color: #800080; /* Match the purple theme of the table */
+    margin-bottom: 10px; /* Add spacing below the title */
+    text-align: center; /* Center-align the title */
+    text-transform: uppercase; /* Make the title uppercase */
+    letter-spacing: 1px; /* Add spacing between letters for style */
 }
