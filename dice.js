@@ -815,6 +815,42 @@ function roll_aos() {
     var killed = do_killed_aos(damage, wound_val);
 
     generate_permalink_aos();
+
+    compile_expected_damages(num_models, hit_dice, hit_stat, hit_mod, hit_reroll, hit_abilities, wound_stat, wound_mod, wound_reroll, wound_abilities, save_stat, null, rend_val, save_mod, cover, ward, damage_val, wound_val);
+}
+
+function compile_expected_damages(num_models, hit_dice, hit_stat, hit_mod, hit_reroll, hit_abilities, wound_stat, wound_mod, wound_reroll, wound_abilities, save_stat, invuln_stat, ap_val, save_mod, cover, fnp, damage_val, wound_val) {
+    const expectedDamages = {};
+
+    // Parse damage probability
+    const damage_prob = parse_dice_prob_array(damage_val, 1).normal;
+
+    for (let models = 1; models <= num_models; models++) {
+        // Number of attacks
+        const attacks = parse_dice_prob_array(hit_dice, models);
+
+        // Hits
+        const hit_prob = do_rerolls(success_chance(hit_stat, 6, hit_mod), hit_reroll);
+        const hits = do_hits(hit_stat, hit_mod, hit_reroll, attacks, hit_abilities, damage_prob, hit_prob);
+
+        // Wounds
+        const wound_prob = calc_wound_prob(wound_stat, 6, wound_mod, wound_reroll, hit_abilities, hit_prob);
+        const wounds = do_wounds(wound_stat, wound_mod, wound_reroll, wound_prob, hits, wound_abilities, damage_prob);
+
+        // Saves
+        const unsaved = do_saves(save_stat, invuln_stat, ap_val, save_mod, cover, 3, null, wound_abilities, wounds, wound_prob);
+
+        // Damage
+        const damage = do_damage(damage_val, fnp, damage_prob, unsaved);
+
+        // Calculate expected damage
+        const expectedDamage = expected_value(damage.normal);
+        expectedDamages[models] = Math.round(expectedDamage * 100) / 100; // Round to 2 decimal places
+    }
+
+    console.log({expectedDamages});
+    
+    return expectedDamages;
 }
 
 // Binomial expansion.
