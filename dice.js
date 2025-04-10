@@ -818,54 +818,41 @@ function roll_aos() {
 
     generate_permalink_aos();
 
-    compile_expected_damages_aos(num_models, hit_dice, hit_stat, hit_mod, hit_reroll, hit_abilities, wound_stat, wound_mod, wound_reroll, wound_abilities, save_stat, rend_val, fnp_values, cover, damage_val, wound_val);
+    compile_expected_damages_aos(num_models, hit_dice, hit_stat, hit_mod, hit_reroll, hit_abilities, wound_stat, wound_mod, wound_reroll, wound_abilities, rend_val, fnp_values, cover, damage_val);
 }
 
-function compile_expected_damages_aos(num_models, hit_dice, hit_stat, hit_mod, hit_reroll, hit_abilities, wound_stat, wound_mod, wound_reroll, wound_abilities, save_stats, rend_val, fnp_values, cover, damage_val, wound_val) {
+function compile_expected_damages_aos(num_models, hit_dice, hit_stat, hit_mod, hit_reroll, hit_abilities, wound_stat, wound_mod, wound_reroll, wound_abilities, rend_val, fnp_values, cover, damage_val) {
     const expectedDamages = [];
 
-    // Parse damage probability
     const damage_prob = parse_dice_prob_array(damage_val, 1).normal;
 
     for (let models = 1; models <= num_models; models++) {
         const modelResults = { models, saveStats: {} };
 
-        // Number of attacks
         const attacks = parse_dice_prob_array(hit_dice, models);
 
-        // Hits
         const hit_prob = do_rerolls(success_chance(hit_stat, 6, hit_mod), hit_reroll);
         const hits = do_hits(hit_stat, hit_mod, hit_reroll, attacks, hit_abilities, damage_prob, hit_prob);
 
-        // Wounds
         const wound_prob = calc_wound_prob(wound_stat, 6, wound_mod, wound_reroll, hit_abilities, hit_prob);
         const wounds = do_wounds(wound_stat, wound_mod, wound_reroll, wound_prob, hits, wound_abilities, damage_prob);
 
-        // Iterate over save stats
         for (let save_stat = 2; save_stat <= 6; save_stat++) {
             modelResults.saveStats[save_stat] = [];
 
-            // Iterate over FNP values
             for (let fnp of fnp_values) {
-                // Saves
                 const unsaved = do_saves(save_stat, null, rend_val, 0, cover, null, null, wound_abilities, wounds, wound_prob);
 
-                // Damage
                 const damage = do_damage(damage_val, fnp, damage_prob, unsaved);
-
-                // Calculate expected damage
                 const expectedDamage = expected_value(damage.normal);
-                modelResults.saveStats[save_stat].push({
-                    fnp: fnp,
-                    expectedDamage: Math.round(expectedDamage * 100) / 100 // Round to 2 decimal places
-                });
+
+                modelResults.saveStats[save_stat].push({fnp, expectedDamage: Math.round(expectedDamage * 100) / 100});
             }
         }
 
         expectedDamages.push(modelResults);
     }
 
-    console.log({ expectedDamages });
     displayExpectedDamages(expectedDamages);
 }
 
@@ -874,24 +861,25 @@ function displayExpectedDamages(expectedDamages) {
     const tableHead = table.querySelector('thead');
     const tableBody = table.querySelector('tbody');
 
-    tableHead.innerHTML = ''; // Clear existing headers
-    tableBody.innerHTML = ''; // Clear existing rows
+    tableHead.innerHTML = '';
+    tableBody.innerHTML = '';
 
-    // Create table headers
     const headerRow = document.createElement('tr');
     const modelsHeader = document.createElement('th');
+
     modelsHeader.textContent = 'Models';
     headerRow.appendChild(modelsHeader);
 
-    // Dynamically create headers for each save stat
     const saveStats = new Set();
+
     expectedDamages.forEach(modelResult => {
         for (const saveStat in modelResult.saveStats) {
             saveStats.add(saveStat);
         }
     });
 
-    const sortedSaveStats = Array.from(saveStats).sort((a, b) => a - b); // Sort save stats numerically
+    const sortedSaveStats = Array.from(saveStats).sort((a, b) => a - b);
+
     sortedSaveStats.forEach(saveStat => {
         const saveHeader = document.createElement('th');
         saveHeader.textContent = `Save ${saveStat}`;
@@ -900,36 +888,33 @@ function displayExpectedDamages(expectedDamages) {
 
     tableHead.appendChild(headerRow);
 
-    // Create table rows
     expectedDamages.forEach(modelResult => {
         const row = document.createElement('tr');
 
-        // Add Models column
         const modelsCell = document.createElement('td');
         modelsCell.textContent = modelResult.models;
         row.appendChild(modelsCell);
 
-        // Add data for each save stat
         sortedSaveStats.forEach(saveStat => {
             const saveCell = document.createElement('td');
             const saveStatData = modelResult.saveStats[saveStat];
 
             if (saveStatData) {
-                // Sort FNP values in the order: 5, 6, None
                 saveStatData.sort((a, b) => {
                     const fnpOrder = { 5: 1, 6: 2, null: 3 };
                     return fnpOrder[a.fnp] - fnpOrder[b.fnp];
                 });
 
-                // Generate cell content
                 let cellContent = '';
+
                 saveStatData.forEach(entry => {
                     const fnpText = entry.fnp === null ? 'None' : `${entry.fnp}+`;
                     cellContent += `${fnpText}: <b>${entry.expectedDamage}</b><br>`;
                 });
+                
                 saveCell.innerHTML = cellContent;
             } else {
-                saveCell.textContent = '-'; // Placeholder for missing data
+                saveCell.textContent = '-';
             }
 
             row.appendChild(saveCell);
